@@ -1,5 +1,8 @@
 import type { config, ConnectionPool } from "mssql";
-import sql from "mssql";
+import * as mssql from "mssql";
+
+const sql = mssql;
+
 
 declare global {
   var sqlPoolPromise: Promise<ConnectionPool> | undefined;

@@ -215,7 +215,19 @@ export default function NearbyAlimsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
+          body: JSON.stringify({
+          // API requires customerId (see POST /api/service-requests)
+          customerId: (() => {
+            // Prefer the same key used in login response
+            try {
+              const userRaw = localStorage.getItem("user");
+              const user = userRaw ? JSON.parse(userRaw) : null;
+              // Support both `id` and `userId` shapes
+              return user?.id ?? user?.userId ?? null;
+            } catch {
+              return null;
+            }
+          })(),
           alimId: selectedAlim.id,
           serviceId,
           fiqh: selectedAlim.fiqh,
@@ -226,6 +238,7 @@ export default function NearbyAlimsPage() {
           requestTime: "15:00:00",
         }),
       });
+
       const data = (await response.json()) as { error?: string };
 
       if (!response.ok) {
