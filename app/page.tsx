@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Book } from "lucide-react";
 import Link from "next/link";
+import { apiFetch, getApiError } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,23 +20,22 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await apiFetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || "Login failed");
+        setError(await getApiError(response, "Login failed"));
         return;
       }
 
-      const user = await response.json();
-      
+      const payload = await response.json();
+      const user = payload.user ?? payload;
+
       // Store user data in localStorage
       localStorage.setItem("user", JSON.stringify(user));
-      
+
       // Redirect based on role
       if (user.role === "alim") {
         router.push("/alim-dashboard");
@@ -128,7 +128,7 @@ export default function LoginPage() {
 
         {/* Sign Up Link */}
         <p className="text-center text-gray-600 text-sm mt-6">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/create-account" className="text-green-600 hover:text-green-700 font-semibold">
             Sign up
           </Link>

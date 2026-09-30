@@ -3,24 +3,198 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: "Courier New", monospace;
 }
 
 body {
+  min-width: 320px;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 3px solid #059669;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The customer dashboard keeps a compact tab bar on phones and gains a
+   conventional top navigation and wider content area on desktop. */
+.customer-dashboard-content {
+  width: min(100% - 2rem, 72rem);
+}
+
+.customer-dashboard-services {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customer-dashboard-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Dashboard pages share one desktop content measure, regardless of their
+   original max-w utility, while cards and dialogs keep their own sizing. */
+.mx-auto.max-w-2xl:not(.account-container),
+.mx-auto.max-w-3xl,
+.mx-auto.max-w-5xl {
+  width: min(calc(100% - 2rem), 72rem);
+  max-width: 72rem;
+}
+
+@media (min-width: 640px) {
+  .customer-dashboard-services {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .min-h-screen:has(> [class*="fixed bottom-0"]) {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0 !important;
+  }
+
+  .min-h-screen:has(> [class*="fixed bottom-0"]) > :first-child {
+    order: -2;
+  }
+
+  .min-h-screen:has(> [class*="fixed bottom-0"]) > [class*="fixed bottom-0"] {
+    position: static;
+    order: -1;
+    inset: auto;
+    width: 100%;
+    border-top: 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .min-h-screen:has(> [class*="fixed bottom-0"]) > [class*="fixed bottom-0"] > div {
+    width: min(calc(100% - 3rem), 72rem);
+    max-width: 72rem;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-inline: auto;
+  }
+
+  .min-h-screen:has(> [class*="fixed bottom-0"]) > [class*="fixed bottom-0"] a {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .min-h-screen:has(> [class*="fixed bottom-0"]) > [class*="fixed bottom-0"] a svg {
+    margin-bottom: 0;
+  }
+
+  .customer-dashboard {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .customer-dashboard > header,
+  .customer-dashboard > div:first-child {
+    order: -2;
+  }
+
+  .customer-dashboard-nav {
+    order: -1;
+  }
+
+  .customer-dashboard-nav {
+    position: static;
+    z-index: 20;
+    border-top: 0;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+  }
+
+  .customer-dashboard-nav-inner {
+    width: min(100% - 3rem, 72rem);
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .customer-dashboard-nav-link {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .customer-dashboard-nav-link svg {
+    margin-bottom: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .customer-dashboard-content {
+    width: min(100% - 4rem, 72rem);
+  }
+}
+
+.selected-location-marker {
+  background: transparent;
+  border: 0;
+}
+
+.selected-location-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ffffff;
+  border-radius: 9999px;
+  background: #dc2626;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 35%);
 }

@@ -10,6 +10,7 @@ import {
   Clock,
   MessageSquare,
   UserCheck,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -46,6 +47,14 @@ export default function AlimDashboard() {
       color: "bg-purple-100",
       iconColor: "text-purple-600",
       href: "/alim-dashboard/availability",
+    },
+    {
+      title: "Tutoring",
+      icon: BookOpen,
+      badge: null,
+      color: "bg-emerald-100",
+      iconColor: "text-emerald-600",
+      href: "/alim-dashboard/tutoring",
     },
   ];
 
@@ -120,7 +129,6 @@ export default function AlimDashboard() {
             { id: "home", label: "Home", icon: Home },
             { id: "requests", label: "Requests", icon: Calendar },
             { id: "history", label: "History", icon: FileText },
-            { id: "profile", label: "Profile", icon: User },
           ].map((tab) => {
             const IconComponent = tab.icon;
             const isActive = activeTab === tab.id;

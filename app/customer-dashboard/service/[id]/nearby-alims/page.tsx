@@ -2,27 +2,34 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import Image from "next/image";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
-  Clock,
   Eye,
-  LocateFixed,
   MapPin,
-  Navigation,
+  LocateFixed,
   Send,
   SlidersHorizontal,
+  Search,
   Star,
   X,
+  Heart,
+  CalendarDays,
 } from "lucide-react";
 
-type SortMode = "distance" | "rating";
 
 type Alim = {
   id: number;
   name: string;
   initials: string;
+  avatarUrl?: string | null;
   distance: string;
+  distanceKm?: number | null;
+  searchRadiusKm?: number;
+  isWithinSearchRadius?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   rating: number;
   reviews: number;
   time: string;
@@ -31,153 +38,106 @@ type Alim = {
   experience: string;
   languages: string;
   bio: string;
+  qualification?: string | null;
+  availability?: { id: number; day: string; startTime: string; endTime: string; isRecurring: boolean }[];
+  reviewsList?: { rating: number; comment?: string | null; createdAt: string }[];
 };
 
-const fallbackAlims: Alim[] = [
-  {
-    id: 1,
-    name: "Mufti Ahmed Khan",
-    initials: "MA",
-    distance: "1.2 KM",
-    rating: 4.9,
-    reviews: 342,
-    time: "10:00 AM - 2:00 PM",
-    area: "Block 5, Clifton",
-    fiqh: "Hanafi",
-    experience: "12 years",
-    languages: "Urdu, English",
-    bio: "Specializes in Nikah, family guidance, and Quranic consultation.",
-  },
-  {
-    id: 2,
-    name: "Mufti Yusuf Ali",
-    initials: "MY",
-    distance: "2.1 KM",
-    rating: 4.9,
-    reviews: 523,
-    time: "9:00 AM - 3:00 PM",
-    area: "North Nazimabad",
-    fiqh: "Hanafi",
-    experience: "15 years",
-    languages: "Urdu, Arabic",
-    bio: "Known for service ceremonies, Islamic counselling, and local community support.",
-  },
-  {
-    id: 3,
-    name: "Molana Abdul Rahman",
-    initials: "MA",
-    distance: "2.5 KM",
-    rating: 4.8,
-    reviews: 289,
-    time: "9:00 AM - 5:00 PM",
-    area: "Gulshan-e-Iqbal",
-    fiqh: "Shafi",
-    experience: "9 years",
-    languages: "Urdu, Sindhi",
-    bio: "Provides Dua, Janaza, and Quran Khawani services with flexible scheduling.",
-  },
-  {
-    id: 4,
-    name: "Sheikh Muhammad Ali",
-    initials: "SM",
-    distance: "3.1 KM",
-    rating: 4.7,
-    reviews: 215,
-    time: "11:00 AM - 4:00 PM",
-    area: "Defence Phase 6",
-    fiqh: "Hanbali",
-    experience: "10 years",
-    languages: "Urdu, English, Arabic",
-    bio: "Experienced in formal ceremonies and Islamic guidance for families.",
-  },
-  {
-    id: 5,
-    name: "Qari Bilal Siddiqui",
-    initials: "QB",
-    distance: "4.4 KM",
-    rating: 4.6,
-    reviews: 178,
-    time: "8:00 AM - 1:00 PM",
-    area: "Saddar",
-    fiqh: "Hanafi",
-    experience: "8 years",
-    languages: "Urdu, Punjabi",
-    bio: "Offers Quran recitation, Dua gatherings, and appointment-based visits.",
-  },
-  {
-    id: 6,
-    name: "Molana Hamza Farooq",
-    initials: "MH",
-    distance: "4.8 KM",
-    rating: 4.6,
-    reviews: 164,
-    time: "2:00 PM - 7:00 PM",
-    area: "PECHS",
-    fiqh: "Maliki",
-    experience: "7 years",
-    languages: "Urdu, English",
-    bio: "Available for household services and short-notice Islamic guidance.",
-  },
-  {
-    id: 7,
-    name: "Mufti Saad Qureshi",
-    initials: "MS",
-    distance: "4.9 KM",
-    rating: 4.5,
-    reviews: 141,
-    time: "12:00 PM - 6:00 PM",
-    area: "Bahadurabad",
-    fiqh: "Hanafi",
-    experience: "6 years",
-    languages: "Urdu",
-    bio: "Focuses on service requests, counselling, and Quranic recitation events.",
-  },
-  {
-    id: 8,
-    name: "Allama Noman Raza",
-    initials: "AN",
-    distance: "5.0 KM",
-    rating: 4.5,
-    reviews: 126,
-    time: "3:00 PM - 8:00 PM",
-    area: "Tariq Road",
-    fiqh: "Shafi",
-    experience: "11 years",
-    languages: "Urdu, Arabic",
-    bio: "Serves community events, Nikah ceremonies, and religious Q&A sessions.",
-  },
-];
+type SearchMode = "range" | "rating" | "out-of-range";
+const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function NearbyAlimsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const serviceId = Number(params.id);
-  const [sortMode, setSortMode] = useState<SortMode>("distance");
-  const [alims, setAlims] = useState<Alim[]>(fallbackAlims);
-  const [selectedAlimId, setSelectedAlimId] = useState(fallbackAlims[0].id);
+  const fiqh = searchParams.get("fiqh") ?? "";
+  const location = searchParams.get("location") ?? "";
+  const requestDate = searchParams.get("requestDate") ?? "";
+  const requestTime = searchParams.get("requestTime") ?? "";
+  const recurrenceType = searchParams.get("recurrenceType") ?? "one-time";
+  const recurrenceDay = searchParams.get("recurrenceDay") ?? "";
+  const recurrenceDate = searchParams.get("recurrenceDate") ?? "";
+  const endDate = searchParams.get("endDate") ?? "";
+  const latitude = searchParams.get("latitude") ?? "";
+  const longitude = searchParams.get("longitude") ?? "";
+  const [nameQuery, setNameQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>("range");
+  const [alims, setAlims] = useState<Alim[]>([]);
+  const [selectedAlimId, setSelectedAlimId] = useState<number | null>(null);
   const [detailsAlim, setDetailsAlim] = useState<Alim | null>(null);
   const [requestSent, setRequestSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("user");
+    const user = raw ? JSON.parse(raw) : null;
+    const customerId = user?.id ?? user?.userId;
+    if (!customerId) return;
+    void fetch(`/api/favorites?customerId=${customerId}`)
+      .then((response) => response.ok ? response.json() : [])
+      .then((items: { alimId: number }[]) => setFavoriteIds(items.map((item) => item.alimId)))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!detailsAlim) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDetailsAlim(null);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [detailsAlim]);
 
   useEffect(() => {
     let ignore = false;
 
     async function loadAlims() {
       try {
+        setIsLoading(true);
         setErrorMessage("");
-        const response = await fetch(`/api/alims?sort=${sortMode}`);
-        const data = (await response.json()) as { alims?: Alim[]; error?: string };
+        const query = new URLSearchParams({
+          sort: searchMode === "rating" ? "rating" : "distance",
+          latitude,
+          longitude,
+          serviceId: String(serviceId),
+          fiqh,
+          location,
+          requestDate: searchMode === "out-of-range" ? "" : requestDate,
+          requestTime: searchMode === "out-of-range" ? "" : requestTime,
+          outOfRange: String(searchMode === "out-of-range"),
+          // Rating mode mein range restriction nahi lagti; results rating ke order mein aate hain.
+          includeOutOfRange: String(searchMode !== "range"),
+          name: nameQuery,
+        });
+        const response = await fetch(`/api/alims?${query.toString()}`);
+        const text = await response.text();
+        let data: { alims?: Alim[]; error?: string } = {};
+
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("Backend returned non-JSON response while loading alims.");
+        }
 
         if (!response.ok) {
           throw new Error(data.error ?? "Unable to load nearby Alims");
         }
 
-        if (!ignore && data.alims?.length) {
-          setAlims(data.alims);
+        if (!ignore) {
+          const realAlims = data.alims ?? [];
+          setAlims(realAlims);
           setSelectedAlimId((currentId) =>
-            data.alims?.some((alim) => alim.id === currentId)
+            realAlims.some((alim) => alim.id === currentId)
               ? currentId
-              : data.alims?.[0]?.id ?? currentId,
+              : realAlims[0]?.id ?? null,
           );
         }
       } catch (error) {
@@ -187,7 +147,12 @@ export default function NearbyAlimsPage() {
               ? error.message
               : "Unable to load nearby Alims",
           );
-          setAlims(fallbackAlims);
+          setAlims([]);
+          setSelectedAlimId(null);
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
         }
       }
     }
@@ -197,52 +162,78 @@ export default function NearbyAlimsPage() {
     return () => {
       ignore = true;
     };
-  }, [sortMode]);
+  }, [fiqh, location, requestDate, requestTime, serviceId, nameQuery, latitude, longitude, searchMode]);
+
+  const toggleFavorite = async (alimId: number) => {
+    const raw = localStorage.getItem("user");
+    const user = raw ? JSON.parse(raw) : null;
+    const customerId = user?.id ?? user?.userId;
+    if (!customerId) return;
+    const isFavorite = favoriteIds.includes(alimId);
+    const response = await fetch(`/api/favorites/${alimId}${isFavorite ? `?customerId=${customerId}` : ""}`, {
+      method: isFavorite ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: isFavorite ? undefined : JSON.stringify({ customerId }),
+    });
+    if (response.ok) setFavoriteIds((current) => isFavorite ? current.filter((id) => id !== alimId) : [...current, alimId]);
+  };
 
   const selectedAlim = alims.find((alim) => alim.id === selectedAlimId);
 
   const handleSendRequest = async () => {
     if (!selectedAlim) {
+      setErrorMessage("Please select an Alim first.");
       return;
     }
 
-    try {
-      setIsSending(true);
-      setErrorMessage("");
+      try {
+        setIsSending(true);
+        setErrorMessage("");
 
-      const response = await fetch("/api/service-requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        const userRaw = localStorage.getItem("user");
+        const user = userRaw ? JSON.parse(userRaw) : null;
+
+        const customerId = user?.id ?? user?.userId;
+
+        if (!customerId) {
+          throw new Error("Please login as a customer before sending a request.");
+        }
+
+        const response = await fetch("/api/service-requests", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
-          // API requires customerId (see POST /api/service-requests)
-          customerId: (() => {
-            // Prefer the same key used in login response
-            try {
-              const userRaw = localStorage.getItem("user");
-              const user = userRaw ? JSON.parse(userRaw) : null;
-              // Support both `id` and `userId` shapes
-              return user?.id ?? user?.userId ?? null;
-            } catch {
-              return null;
-            }
-          })(),
+          customerId,
           alimId: selectedAlim.id,
           serviceId,
           fiqh: selectedAlim.fiqh,
-          locationAddress: "Selected customer location",
-          latitude: 30.776453,
-          longitude: 70.957031,
-          requestDate: "2026-05-01",
-          requestTime: "15:00:00",
+          locationAddress: location,
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+          requestDate,
+          requestTime,
+          isRecurring: recurrenceType !== "one-time",
+          recurrenceType,
+          recurrenceDay: recurrenceDay ? Number(recurrenceDay) : undefined,
+          recurrenceDate: recurrenceDate ? Number(recurrenceDate) : undefined,
+          startDate: requestDate,
+          endDate: endDate || undefined,
         }),
-      });
+        });
 
-      const data = (await response.json()) as { error?: string };
+      const responseText = await response.text();
+      let data: { error?: string } = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Failed to send request");
+        const backendMessage = data.error ?? responseText.trim().slice(0, 180);
+        throw new Error(backendMessage || `Failed to send request (HTTP ${response.status})`);
       }
 
       setRequestSent(true);
@@ -266,71 +257,57 @@ export default function NearbyAlimsPage() {
             </Link>
             <div>
               <h1 className="text-lg font-bold text-gray-950">Nearby Alims</h1>
-              <p className="text-xs text-gray-500">Within 5 KM of Your Location</p>
+              <p className="text-xs text-gray-500">Nearby and other available Aalims</p>
             </div>
           </div>
         </header>
-
-        <section className="bg-white">
-          <div className="relative mx-auto flex h-44 max-w-2xl items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100 via-emerald-200 to-teal-100">
-            <div className="absolute right-4 top-3 rounded-full bg-white px-4 py-2 text-xs font-semibold text-gray-700 shadow">
-              5 KM Range
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-emerald-500 bg-white text-emerald-600 shadow-sm">
-                <Navigation className="h-8 w-8 fill-current" />
-              </div>
-              <div className="-mt-1 rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-bold text-white shadow-lg">
-                Your Location
-              </div>
-            </div>
-          </div>
-        </section>
 
         <main className="mx-auto max-w-2xl px-4 py-6 pb-36">
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
                 <SlidersHorizontal className="h-4 w-4 text-gray-500" />
-                Sort By:
+                Available Alims
               </div>
-              <span className="text-sm text-gray-500">{alims.length} Alims Found</span>
+              <span className="text-sm text-gray-500">
+                {isLoading ? "Loading Alims..." : `${alims.length} Alims Found`}
+              </span>
             </div>
             {errorMessage && (
               <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
                 {errorMessage}
               </div>
             )}
-            <div className="mt-4 grid max-w-md grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setSortMode("distance")}
-                className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition ${
-                  sortMode === "distance"
-                    ? "bg-emerald-500 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                <MapPin className="h-4 w-4" />
-                Distance
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <button type="button" onClick={() => setSearchMode("range")} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold ${searchMode === "range" ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+                <MapPin className="h-4 w-4" /> Alim Range
               </button>
-              <button
-                type="button"
-                onClick={() => setSortMode("rating")}
-                className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition ${
-                  sortMode === "rating"
-                    ? "bg-emerald-500 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                <Star className="h-4 w-4" />
-                Rating
+              <button type="button" onClick={() => setSearchMode("rating")} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold ${searchMode === "rating" ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+                <Star className="h-4 w-4" /> Rating Based
+              </button>
+              <button type="button" onClick={() => setSearchMode("out-of-range")} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold ${searchMode === "out-of-range" ? "bg-emerald-500 text-white" : "bg-gray-100 text-gray-600"}`}>
+                Out of Range Search
               </button>
             </div>
+            <label className="relative mt-4 block max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input value={nameQuery} onChange={(event) => setNameQuery(event.target.value)} placeholder="Search Aalim by name" className="w-full rounded-lg border border-gray-200 py-3 pl-9 pr-3 text-sm outline-none focus:border-emerald-500" />
+            </label>
           </div>
 
           <div className="mt-5 space-y-3">
-            {alims.map((alim, index) => {
+            {!isLoading && alims.length === 0 && (
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm font-medium text-gray-600 shadow-sm">
+                {searchMode === "out-of-range"
+                  ? "Is Fiqh aur service ke liye koi Aalim assigned nahi mila. Service ya Fiqh check karein."
+                  : searchMode === "rating"
+                    ? "Is selected service, Fiqh aur time par koi Aalim available nahi. Date/time change karein ya Out of Range Search try karein."
+                    : "Is selected time par Aalim ki range mein koi available nahi. Date/time change karein ya Out of Range Search try karein."}
+              </div>
+            )}
+            {alims.length > 0 && (
+              <section className="space-y-3">
+                {alims.map((alim, index) => {
               const isSelected = selectedAlimId === alim.id;
 
               return (
@@ -349,24 +326,21 @@ export default function NearbyAlimsPage() {
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-500">
                         {index + 1}
                       </span>
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600 shadow">
-                        {alim.initials}
+                      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-sm font-bold text-slate-600 shadow">
+                        {alim.avatarUrl ? (
+                          <Image src={alim.avatarUrl} alt={`${alim.name} profile`} width={48} height={48} unoptimized className="h-full w-full object-cover" />
+                        ) : alim.initials}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-base font-bold leading-snug text-gray-950">{alim.name}</span>
                         <span className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
                           <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                            <LocateFixed className="h-4 w-4" />
-                            {alim.distance}
+                            <LocateFixed className="h-4 w-4" /> {alim.distance}
                           </span>
                           <span className="inline-flex items-center gap-1">
                             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                             {alim.rating} ({alim.reviews})
                           </span>
-                        </span>
-                        <span className="mt-2 flex items-center gap-1 text-sm text-gray-600">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          {alim.time}
                         </span>
                         <span className="mt-1 block text-sm text-gray-500">{alim.area}</span>
                       </span>
@@ -379,10 +353,15 @@ export default function NearbyAlimsPage() {
                     >
                       <Eye className="h-5 w-5" />
                     </button>
+                    <button type="button" onClick={() => void toggleFavorite(alim.id)} aria-label={`${favoriteIds.includes(alim.id) ? "Remove" : "Add"} ${alim.name} favorite`} className="rounded-full p-2 text-rose-500 hover:bg-rose-50">
+                      <Heart className={`h-5 w-5 ${favoriteIds.includes(alim.id) ? "fill-current" : ""}`} />
+                    </button>
                   </div>
                 </article>
-              );
-            })}
+                );
+                })}
+              </section>
+            )}
           </div>
         </main>
 
@@ -395,14 +374,14 @@ export default function NearbyAlimsPage() {
           <div className="mx-auto flex max-w-2xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase text-gray-500">Selected Alim</p>
-              <p className="text-lg font-bold text-gray-950">{selectedAlim?.name}</p>
+              <p className="text-lg font-bold text-gray-950">{selectedAlim?.name ?? "No Alim selected"}</p>
             </div>
             <button
               type="button"
               onClick={handleSendRequest}
-              disabled={isSending}
+              disabled={isSending || !selectedAlim}
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-10 py-4 text-sm font-bold transition sm:w-auto ${
-                requestSent || isSending
+                requestSent || isSending || !selectedAlim
                   ? "bg-gray-200 text-gray-500"
                   : "bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
               }`}
@@ -414,16 +393,19 @@ export default function NearbyAlimsPage() {
         </div>
 
         {detailsAlim && (
-          <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 px-4">
-            <section className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-2 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-5">
+            <section role="dialog" aria-modal="true" aria-labelledby="alim-profile-title" className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-3xl bg-white p-4 shadow-2xl sm:max-h-[calc(100dvh-2.5rem)] sm:p-6">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 text-base font-bold text-slate-700">
-                    {detailsAlim.initials}
+                  <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-200 text-base font-bold text-slate-700">
+                    {detailsAlim.avatarUrl ? (
+                      <Image src={detailsAlim.avatarUrl} alt={`${detailsAlim.name} profile`} width={64} height={64} unoptimized className="h-full w-full object-cover" />
+                    ) : detailsAlim.initials}
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-950">{detailsAlim.name}</h2>
-                    <p className="text-sm text-gray-500">{detailsAlim.area}</p>
+                  <div className="min-w-0">
+                    <h2 id="alim-profile-title" className="text-lg font-bold leading-tight text-gray-950 sm:text-xl">{detailsAlim.name}</h2>
+                    <p className="mt-1 text-sm text-gray-500">{detailsAlim.qualification || "Islamic Scholar / Aalim"}</p>
+                    <p className="mt-1 text-sm text-gray-500">{detailsAlim.area}</p>
                   </div>
                 </div>
                 <button
@@ -436,7 +418,7 @@ export default function NearbyAlimsPage() {
                 </button>
               </div>
 
-              <div className="grid gap-3 text-sm sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 sm:gap-3">
                 <div className="rounded-lg bg-gray-50 p-3">
                   <p className="text-xs font-semibold uppercase text-gray-500">Distance</p>
                   <p className="mt-1 font-bold text-gray-950">{detailsAlim.distance}</p>
@@ -459,12 +441,44 @@ export default function NearbyAlimsPage() {
 
               <div className="mt-4 space-y-3 text-sm text-gray-700">
                 <p>
-                  <span className="font-semibold text-gray-950">Available:</span> {detailsAlim.time}
-                </p>
-                <p>
                   <span className="font-semibold text-gray-950">Languages:</span> {detailsAlim.languages}
                 </p>
                 <p>{detailsAlim.bio}</p>
+                <div className="rounded-xl bg-emerald-50 p-3 text-emerald-900">
+                  <p className="flex items-center gap-2 font-semibold"><CalendarDays className="h-4 w-4" />Weekly availability</p>
+                  <div className="mt-2 divide-y divide-emerald-100 rounded-lg bg-white/70">
+                    {weekDays.map((day) => {
+                      const slots = detailsAlim.availability?.filter((slot) => slot.day === day) ?? [];
+                      return (
+                        <div key={day} className="grid grid-cols-1 gap-1 px-3 py-2 text-xs sm:grid-cols-[minmax(100px,0.8fr)_1fr] sm:gap-3">
+                          <p className="font-semibold text-emerald-900">{day}</p>
+                          <div className="space-y-1 text-gray-700">
+                            {slots.length > 0 ? slots.map((slot) => <p key={slot.id}>{slot.startTime} - {slot.endTime}</p>) : <p className="text-gray-400">Not available</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                  <div className="mt-5 border-t border-gray-100 pt-4">
+                    <h3 className="text-sm font-bold text-gray-950">Reviews</h3>
+                    {detailsAlim.reviewsList?.length ? (
+                      <div className="mt-3 space-y-3">
+                        {detailsAlim.reviewsList.map((review, index) => (
+                          <div key={`${review.createdAt}-${index}`} className="rounded-xl bg-gray-50 p-3">
+                            <div className="font-semibold text-amber-500">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</div>
+                            {review.comment && <p className="mt-1 text-sm text-gray-700">{review.comment}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-500">No reviews yet.</p>
+                    )}
+                  </div>
+              </div>
+              <div className="mt-5 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setDetailsAlim(null)} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Close</button>
+                <button type="button" onClick={() => { setSelectedAlimId(detailsAlim.id); setDetailsAlim(null); }} className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800">Select this Alim</button>
               </div>
             </section>
           </div>

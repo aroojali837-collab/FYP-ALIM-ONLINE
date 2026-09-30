@@ -1,9 +1,10 @@
 import { useCallback, useState } from "react";
+import { apiFetch } from "./api";
 
 interface UseApiState {
   loading: boolean;
   error: string | null;
-  data: any;
+  data: unknown;
 }
 
 export function useApi() {
@@ -18,13 +19,7 @@ export function useApi() {
       setState({ loading: true, error: null, data: null });
 
       try {
-        const response = await fetch(url, {
-          headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
-          },
-          ...options,
-        });
+        const response = await apiFetch(url, options);
 
         if (!response.ok) {
           const error = await response.json();

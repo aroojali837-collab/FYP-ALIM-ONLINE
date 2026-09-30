@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Sparkles, Star, Send, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -11,7 +11,7 @@ export default function ServiceCompletedClient() {
   const [feedback, setFeedback] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const customerName = searchParams.get("name") || "Mufti Ahmed Khan";
+  const customerName = searchParams.get("name") || "Ahmed Hassan";
   const serviceType = searchParams.get("service") || "Nikah";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -22,118 +22,110 @@ export default function ServiceCompletedClient() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="mb-6">
-            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
+      <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 py-8">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center justify-center">
+          <div className="w-full rounded-[28px] bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
-            <p className="text-gray-600">Your feedback has been submitted successfully.</p>
+            <h1 className="mt-4 text-2xl font-bold text-slate-900">Thank You!</h1>
+            <p className="mt-2 text-sm text-slate-500">Your feedback has been submitted successfully.</p>
+            <Link
+              href="/alim-dashboard"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
+            >
+              Back to Dashboard
+            </Link>
           </div>
-          <Link
-            href="/alim-dashboard"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition"
-          >
-            Back to Dashboard
-          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
-        <Link href="/alim-dashboard" className="mb-6 inline-block">
-          <ChevronLeft className="w-6 h-6 text-gray-600" />
-        </Link>
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white px-4 py-6">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center">
+        <div className="w-full rounded-[28px] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+          <Link href="/alim-dashboard" className="inline-flex rounded-full p-2 text-slate-600 transition hover:bg-slate-100">
+            <ChevronLeft className="h-6 w-6" />
+          </Link>
 
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Service Completed!</h1>
-          <p className="text-gray-600 text-sm">
-            Your {serviceType} service with {customerName} has been completed.
-          </p>
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-900 mb-3">
-            How was your experience?
-          </label>
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                className="transition transform hover:scale-110"
-              >
-                <svg
-                  className={`w-8 h-8 ${star <= rating ? "text-yellow-400" : "text-gray-300"}`}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </button>
-            ))}
-          </div>
-          {rating > 0 && (
-            <p className="text-center text-sm text-gray-600 mt-2">
-              {rating === 1 && "Poor"}
-              {rating === 2 && "Fair"}
-              {rating === 3 && "Good"}
-              {rating === 4 && "Very Good"}
-              {rating === 5 && "Excellent"}
+          <div className="mt-3 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-500">
+              <Sparkles className="h-8 w-8" />
+            </div>
+            <h1 className="mt-4 text-2xl font-bold text-slate-900">Rate Customer Experience</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Share your experience with {customerName} after the {serviceType} service.
             </p>
-          )}
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                {customerName
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0] || "")
+                  .join("")
+                  .toUpperCase() || "CU"}
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">{customerName}</h3>
+                <p className="text-sm text-slate-500">{serviceType}</p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-5">
+            <div>
+              <p className="text-sm font-medium text-slate-700">How was the customer&apos;s behavior and cooperation?</p>
+              <div className="mt-3 flex justify-center gap-1">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setRating(value)}
+                    className={`rounded-full p-1.5 transition ${rating >= value ? "text-amber-400" : "text-slate-300"}`}
+                  >
+                    <Star className="h-8 w-8 fill-current" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <label htmlFor="feedback" className="block text-sm font-medium text-slate-700">
+                Your feedback about the customer (optional)
+              </label>
+              <textarea
+                id="feedback"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Share your experience about the customer&apos;s cooperation, punctuality, behavior, etc..."
+                className="mt-2 min-h-32 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500"
+                rows={4}
+              />
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Link
+                href="/alim-dashboard"
+                className="rounded-2xl bg-slate-100 px-4 py-3 text-center font-semibold text-slate-600 transition hover:bg-slate-200"
+              >
+                Skip
+              </Link>
+              <button
+                type="submit"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
+              >
+                <Send className="h-4 w-4" />
+                Submit Feedback
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label htmlFor="feedback" className="block text-sm font-medium text-gray-900 mb-2">
-              Share your feedback (optional)
-            </label>
-            <textarea
-              id="feedback"
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Tell us about your experience with the Alim..."
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition resize-none"
-              rows={4}
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <Link
-              href="/alim-dashboard"
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold py-3 rounded-lg transition text-center"
-            >
-              Skip
-            </Link>
-            <button
-              type="submit"
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition"
-            >
-              Submit Review
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

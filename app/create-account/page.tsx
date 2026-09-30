@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, User, Mail, Lock, Phone, MapPin } from "lucide-react";
 import Link from "next/link";
+import { apiFetch, getApiError } from "@/lib/api";
 
 type UserRole = "customer" | "alim";
 
@@ -35,9 +36,8 @@ export default function CreateAccountPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await apiFetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
           role: userRole,
@@ -46,17 +46,24 @@ export default function CreateAccountPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || "Registration failed");
+        setError(await getApiError(response, "Registration failed"));
         return;
       }
 
       const result = await response.json();
-      
-      // Store minimal user info for initial navigation
-      localStorage.setItem("userId", result.userId.toString());
-      localStorage.setItem("userRole", userRole);
-      
+
+      const registeredUser = result.user ?? {
+        id: result.userId,
+        userId: result.userId,
+        role: userRole,
+        fullName: formData.fullName,
+        email: formData.email,
+      };
+
+      localStorage.setItem("user", JSON.stringify(registeredUser));
+      localStorage.setItem("userId", String(registeredUser.id ?? registeredUser.userId));
+      localStorage.setItem("userRole", registeredUser.role ?? userRole);
+
       // Redirect based on user role
       if (userRole === "alim") {
         router.push("/alim-dashboard/profile");
@@ -80,7 +87,7 @@ export default function CreateAccountPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-50 p-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="account-container max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <Link

@@ -1,33 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const LocationMap = dynamic(() => import("./LocationMap"), { ssr: false });
 
 export default function ServicePage() {
   const params = useParams();
   const router = useRouter();
   const serviceId = params.id;
+  const [serviceTitle, setServiceTitle] = useState("Service Request");
+  const [locationError, setLocationError] = useState("");
   
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     service: "Service Request",
     fiqh: "Hanafi",
-    location: { lat: 30.776453, lng: 70.957031, address: "" },
-    date: "2026-05-01",
-    time: "3:00 PM",
+    location: { lat: null as number | null, lng: null as number | null, address: "" },
+    date: new Date().toISOString().slice(0, 10),
+    time: "15:00",
+    recurrenceType: "one-time",
+    recurrenceDay: "1",
+    recurrenceDate: "1",
+    endDate: "",
   });
 
-  const services = {
-    "1": { name: "Nikah", description: "Marriage ceremony" },
-    "2": { name: "Dua", description: "Prayer service" },
-    "3": { name: "Janaza", description: "Funeral prayer" },
-    "4": { name: "Quran Khawani", description: "Quran recitation" },
-  };
+  useEffect(() => {
+    async function loadServices() {
+      try {
+        const response = await fetch("/api/services");
+        if (!response.ok) return;
 
-  const serviceData = services[serviceId as keyof typeof services];
-  const serviceTitle = serviceData?.name || "Service Request";
+        const data = await response.json();
+        const services = Array.isArray(data) ? data : data?.services ?? [];
+        const selected = services.find((item: { id: number; name?: string }) => String(item.id) === String(serviceId));
+        if (selected?.name) {
+          setServiceTitle(selected.name);
+          setFormData((prev) => ({ ...prev, service: selected.name }));
+        }
+      } catch {
+        // keep fallback title
+      }
+    }
+
+    loadServices();
+  }, [serviceId]);
 
   const fiqhOptions = ["Hanafi", "Shafi", "Maliki", "Hanbali"];
 
@@ -39,6 +59,14 @@ export default function ServicePage() {
     setFormData((prev) => ({
       ...prev,
       location: { ...prev.location, address },
+    }));
+  };
+
+  const handleMapChange = (lat: number, lng: number) => {
+    setLocationError("");
+    setFormData((prev) => ({
+      ...prev,
+      location: { ...prev.location, lat, lng },
     }));
   };
 
@@ -63,8 +91,24 @@ export default function ServicePage() {
   };
 
   const handleFindAlims = () => {
-    console.log("Find Alims with data:", formData);
-    router.push(`/customer-dashboard/service/${serviceId}/nearby-alims`);
+    if (formData.location.lat === null || formData.location.lng === null) {
+      setLocationError("Please search for an address or select your service location on the map first.");
+      setCurrentStep(2);
+      return;
+    }
+    const query = new URLSearchParams({
+      fiqh: formData.fiqh,
+      location: formData.location.address,
+      latitude: String(formData.location.lat),
+      longitude: String(formData.location.lng),
+      requestDate: formData.date,
+      requestTime: formData.time,
+      recurrenceType: formData.recurrenceType,
+      recurrenceDay: formData.recurrenceDay,
+      recurrenceDate: formData.recurrenceDate,
+      endDate: formData.endDate,
+    });
+    router.push(`/customer-dashboard/service/${serviceId}/nearby-alims?${query.toString()}`);
   };
 
   return (
@@ -133,27 +177,21 @@ export default function ServicePage() {
               Where do you want the service to be performed?
             </p>
             <div className="mt-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address or Location Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.location.address}
-                  onChange={(e) => handleLocationChange(e.target.value)}
-                  placeholder="Enter your address or location"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-900">Current coordinates:</p>
-                  <p className="text-blue-700">
-                    30.776453, 70.957031
-                  </p>
+                  <p className="font-medium text-blue-900">Choose your exact service location</p>
+                  <p className="text-blue-700">Search an address or select a point on the map.</p>
                 </div>
               </div>
+              <LocationMap
+                latitude={formData.location.lat}
+                longitude={formData.location.lng}
+                address={formData.location.address}
+                onChange={handleMapChange}
+                onAddressChange={handleLocationChange}
+              />
+              {locationError && <p className="text-sm font-medium text-red-600">{locationError}</p>}
             </div>
           </div>
         )}
@@ -187,6 +225,25 @@ export default function ServicePage() {
                   onChange={(e) => handleTimeChange(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
+              </div>
+              <div className="border-t border-gray-100 pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Repeat request</label>
+                <select value={formData.recurrenceType} onChange={(e) => setFormData((prev) => ({ ...prev, recurrenceType: e.target.value }))} className="w-full rounded-lg border border-gray-200 px-4 py-3">
+                  <option value="one-time">One-time</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+                {formData.recurrenceType === "weekly" && (
+                  <select value={formData.recurrenceDay} onChange={(e) => setFormData((prev) => ({ ...prev, recurrenceDay: e.target.value }))} className="mt-3 w-full rounded-lg border border-gray-200 px-4 py-3">
+                    {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => <option key={day} value={index}>{day}</option>)}
+                  </select>
+                )}
+                {formData.recurrenceType === "monthly" && (
+                  <input type="number" min="1" max="31" value={formData.recurrenceDate} onChange={(e) => setFormData((prev) => ({ ...prev, recurrenceDate: e.target.value }))} className="mt-3 w-full rounded-lg border border-gray-200 px-4 py-3" placeholder="Day of month" />
+                )}
+                {formData.recurrenceType !== "one-time" && (
+                  <input type="date" value={formData.endDate} min={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, endDate: e.target.value }))} className="mt-3 w-full rounded-lg border border-gray-200 px-4 py-3" aria-label="Optional repeat end date" />
+                )}
               </div>
             </div>
           </div>
@@ -224,13 +281,8 @@ export default function ServicePage() {
                   Location
                 </p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {formData.location.lat}, {formData.location.lng}
+                  {formData.location.address || "Location not selected"}
                 </p>
-                {formData.location.address && (
-                  <p className="text-sm text-gray-600">
-                    Coordinates: {formData.location.lat.toFixed(3)}, {formData.location.lng.toFixed(3)}
-                  </p>
-                )}
               </div>
 
               <div>
